@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 (2026-11-12)
+
+- **Carimbos Wonderdraft:** nova categoria com as 143 imagens dos *World Map Assets* (sem borda) de 2-Minute Tabletop (CC BY-NC 4.0), em 7 grupos: montanhas, cordilheiras, colinas e vulcões, florestas e árvores, povoados, navios e carroça, ícones/faixas/rosa.
+- Essas imagens têm a caixa na proporção da figura (uma faixa larga não fica dentro de um quadrado) e entram na exportação PNG.
+- Funcionam com tamanho, giro, espelho, opacidade, animação, aura de mana, nome, notas, diário, espalhar ao arrastar e variação aleatória. As cores delas não mudam, então o painel esconde os campos de cor.
+- Nas faixas (vermelha e azul), o nome aparece dentro da faixa.
+- **Correção:** a aura de mana dos carimbos ficava escondida atrás do mapa; agora aparece.
+- O nome embaixo dos carimbos segue o lado menor da figura (não fica gigante em imagens largas).
+
 ## 1.0.0 (2026-11-11)
 
 Primeira versão.

@@ -37,6 +37,14 @@ export function placeName(r = Math.random) {
 
 /** Guess a kind of name from a stamp key (montanha, floresta...). */
 export function kindForStamp(key) {
+  if ( String(key).startsWith("wd-") ) {
+    if ( /mountain|hill|volcano/.test(key) ) return "montanha";
+    if ( /forest|tree|bamboo/.test(key) ) return "floresta";
+    if ( /tower|shrine|pyramid|ziggurat|dwarf-gate|mine/.test(key) ) return "misterio";
+    if ( /settlement/.test(key) ) return "cidade";
+    if ( /ship/.test(key) ) return "mar";
+    return "lugar";
+  }
   if ( /montanha|cordilheira|pico|vulcao|mesa|rochedo/.test(key) ) return "montanha";
   if ( /floresta|bosque|arvore|pinheiro|anciao|palmeira|cogumelos/.test(key) ) return "floresta";
   if ( /dunas|cactos/.test(key) ) return "deserto";

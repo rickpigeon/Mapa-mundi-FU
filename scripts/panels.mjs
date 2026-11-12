@@ -6,8 +6,9 @@
 import { CELL, escapeHTML } from "./constants.mjs";
 import {
   AREA_FX, DECOR, ELEMENTS, LABEL_FX, PALETTE, REGION_BORDERS, REGION_PATTERNS, ROUTE_STYLES, STAMPS, STAMP_CATEGORIES, STAMP_FX,
-  TEXTURES, THEMES, THREATS, fontChoices
+  TEXTURES, THEMES, THREATS, WONDERDRAFT_GROUPS, fontChoices
 } from "./catalog.mjs";
+import { stampSrc } from "./stamps-svg.mjs";
 import { SHAPES } from "./generator.mjs";
 import { BASES } from "./store.mjs";
 import { texturePreview } from "./paint.mjs";
@@ -130,14 +131,23 @@ export function toolPanel(app) {
     case "stamp": {
       const cats = Object.entries(STAMP_CATEGORIES).map(([k, label]) => `<button type="button" class="mf-cat${k === p.stamp.cat ? " is-on" : ""}" data-act="stamp-cat" data-key="${k}">${h(label)}</button>`).join("");
       const meta = STAMPS[p.stamp.key];
-      const list = Object.entries(STAMPS).filter(([, m]) => m.cat === p.stamp.cat).map(([k, m]) => (
-        `<button type="button" class="mf-stamp${k === p.stamp.key ? " is-on" : ""}" data-act="pick-stamp" data-key="${k}" data-tooltip="${h(m.label)}">`
-        + `<svg viewBox="0 0 100 100" overflow="visible" style="--c1:${p.stamp.tint ? p.stamp.color : m.c1};--c2:${m.c2}"><use href="#mmfu-st-${k}"/></svg></button>`
+      const wonder = p.stamp.cat === "wonderdraft";
+      const sub = WONDERDRAFT_GROUPS[p.stamp.sub] ? p.stamp.sub : Object.keys(WONDERDRAFT_GROUPS)[0];
+      const subs = wonder
+        ? `<div class="mf-cats mf-subs">${Object.entries(WONDERDRAFT_GROUPS).map(([k, label]) => `<button type="button" class="mf-cat${k === sub ? " is-on" : ""}" data-act="stamp-sub" data-key="${k}">${h(label)}</button>`).join("")}</div>`
+        : "";
+      const list = Object.entries(STAMPS).filter(([, m]) => m.cat === p.stamp.cat && (!wonder || m.sub === sub)).map(([k, m]) => (
+        `<button type="button" class="mf-stamp${m.img ? " is-raster" : ""}${k === p.stamp.key ? " is-on" : ""}" data-act="pick-stamp" data-key="${k}" data-tooltip="${h(m.label)}">`
+        + (m.img
+          ? `<img src="${h(stampSrc(k))}" alt="" loading="lazy" draggable="false">`
+          : `<svg viewBox="0 0 100 100" overflow="visible" style="--c1:${p.stamp.tint ? p.stamp.color : m.c1};--c2:${m.c2}"><use href="#mmfu-st-${k}"/></svg>`)
+        + `</button>`
       )).join("");
-      return title + `<div class="mf-cats">${cats}</div><div class="mf-stampgrid">${list}</div>`
+      const credit = wonder ? `<p class="mf-hint mf-credit">Imagens prontas de 2-Minute Tabletop (CC BY-NC 4.0). As cores delas não mudam.</p>` : "";
+      return title + `<div class="mf-cats">${cats}</div>${subs}<div class="mf-stampgrid${wonder ? " is-raster" : ""}">${list}</div>${credit}`
         + range("Tamanho", "p:stamp.size", p.stamp.size ?? meta.size, 16, 400, 1)
-        + check("Cor própria", "p:stamp.tint", p.stamp.tint)
-        + (p.stamp.tint ? colorField("Cor", "p:stamp.color", p.stamp.color) : "")
+        + (meta.img ? "" : check("Cor própria", "p:stamp.tint", p.stamp.tint))
+        + (p.stamp.tint && !meta.img ? colorField("Cor", "p:stamp.color", p.stamp.color) : "")
         + check("Espalhar ao arrastar", "p:stamp.scatter", p.stamp.scatter, "Arraste para semear vários (florestas, cordilheiras...)")
         + check("Variação aleatória", "p:stamp.jitter", p.stamp.jitter, "Muda um pouco o tamanho e espelha alguns, para não ficarem iguais")
         + select("Animação", "p:stamp.fx", p.stamp.fx, STAMP_FX)
@@ -227,8 +237,10 @@ export function inspector(app, objs) {
       body = select("Carimbo", "o:key", o.key, opts)
         + range("Tamanho", "o:size", o.size, 12, 600, 1) + range("Giro", "o:rot", o.rot, -180, 180, 1, v => `${v}°`)
         + check("Espelhar", "o:flip", o.flip)
-        + colorField("Cor principal", "o:color", o.color, { nullable: true, fallback: meta.c1 })
-        + colorField("Cor secundária", "o:color2", o.color2, { nullable: true, fallback: meta.c2 })
+        + (meta.img
+          ? `<p class="mf-hint">Imagem pronta do Wonderdraft (2-Minute Tabletop): as cores não mudam.</p>`
+          : colorField("Cor principal", "o:color", o.color, { nullable: true, fallback: meta.c1 })
+            + colorField("Cor secundária", "o:color2", o.color2, { nullable: true, fallback: meta.c2 }))
         + range("Opacidade", "o:opacity", o.opacity, 0.1, 1, 0.05, pct)
         + select("Animação", "o:fx", o.fx, STAMP_FX)
         + select("Aura de mana", "o:aura", o.aura ?? "", { "": "Nenhuma", ...Object.fromEntries(Object.entries(ELEMENTS).map(([k, m]) => [k, m.label])) }, { type: "nstr" })

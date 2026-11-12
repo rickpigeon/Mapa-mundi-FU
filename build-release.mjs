@@ -15,7 +15,7 @@ import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const INCLUDE = ["module.json", "README.md", "CHANGELOG.md", "LICENSE", "scripts", "styles"];
+const INCLUDE = ["module.json", "README.md", "CHANGELOG.md", "LICENSE", "scripts", "styles", "assets"];
 
 const args = process.argv.slice(2);
 const repoIndex = args.indexOf("--repo");

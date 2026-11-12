@@ -30,7 +30,7 @@ const DEFAULT_PREFS = {
   brush: { size: 40, opacity: 0.85, soft: 0.35, clip: "l" },
   texture: { key: "floresta", size: 80, opacity: 1, clip: "l" },
   eraser: { size: 50, clip: "a" },
-  stamp: { key: "montanha", cat: "relevo", size: null, tint: false, color: "#8c7b6b", scatter: false, jitter: true, fx: "none", hidden: false },
+  stamp: { key: "montanha", cat: "relevo", sub: "montanhas", size: null, tint: false, color: "#8c7b6b", scatter: false, jitter: true, fx: "none", hidden: false },
   label: { text: "", kind: "lugar", font: "Signika", size: 44, color: "#2b2b2b", outline: "#ffffff", outlineW: 3, fx: "none", fxColor: "#ffd34d", caps: true, bold: true, italic: false, hidden: false },
   fx: { kind: "mana", element: "fire", r: null, color: null, intensity: 2, hidden: false },
   route: { style: "estrada", color: null, width: null, arrow: false, smooth: true, hidden: false },
@@ -587,6 +587,11 @@ export class MapApp extends ApplicationV2 {
         break;
       case "stamp-cat":
         this.prefs.stamp.cat = el.dataset.key;
+        this.savePrefs();
+        this.renderPanel();
+        break;
+      case "stamp-sub":
+        this.prefs.stamp.sub = el.dataset.key;
         this.savePrefs();
         this.renderPanel();
         break;
@@ -1441,12 +1446,13 @@ export class MapApp extends ApplicationV2 {
     let size = p.size ?? meta.size, flip = false, rot = 0;
     if ( p.jitter ) {
       size *= 0.88 + Math.random() * 0.24;
-      if ( FLIPPABLE.has(meta.cat) ) flip = Math.random() < 0.4;
-      rot = FLIPPABLE.has(meta.cat) ? (Math.random() - 0.5) * 6 : 0;
+      const flippable = meta.img ? meta.flip : FLIPPABLE.has(meta.cat);
+      if ( flippable ) flip = Math.random() < 0.4;
+      rot = flippable ? (Math.random() - 0.5) * 6 : 0;
     }
     const o = normalizeObject({
       type: "stamp", key: p.key, x, y, size: Math.round(size), flip, rot: Math.round(rot),
-      color: p.tint ? p.color : null, fx: p.fx, hidden: p.hidden
+      color: p.tint && !meta.img ? p.color : null, fx: p.fx, hidden: p.hidden
     });
     this.mapData.objects.push(o);
     return o;

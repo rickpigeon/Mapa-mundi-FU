@@ -4,7 +4,8 @@
  * the derived --c1d/--c1l/--c2d (darker/lighter, see the stylesheet) and --ink (outline).
  */
 
-import { shade } from "./constants.mjs";
+import { PATH, shade } from "./constants.mjs";
+import { STAMPS } from "./catalog.mjs";
 
 /** Darker variant of a fill token: "c1" -> "c1d", "#hex" -> darker hex. */
 const dark = f => (f.startsWith("#") ? shade(f, -0.28) : `${f}d`);
@@ -367,6 +368,13 @@ export function standaloneStamp(key, vars) {
 }
 
 const urlCache = new Map();
+
+/** Where a stamp's picture comes from: the module's image file (Wonderdraft) or a drawing in these colours. */
+export function stampSrc(key, c1, c2) {
+  const meta = STAMPS[key];
+  if ( meta?.img ) return `${PATH}/${meta.img}`;
+  return stampURL(key, c1 ?? meta?.c1 ?? "#8c7b6b", c2 ?? meta?.c2 ?? "#f4f7fb");
+}
 
 /** Data URL of a stamp in given colours. Same stamp + colours = same URL, decoded once by the browser. */
 export function stampURL(key, c1, c2) {

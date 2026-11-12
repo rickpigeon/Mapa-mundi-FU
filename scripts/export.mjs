@@ -2,8 +2,8 @@
  * Mapa-mundi-FU: save the map as a PNG (a still frame: effects become a static glow).
  */
 import { MAP_H, MAP_W, shade } from "./constants.mjs";
-import { AREA_FX, ELEMENTS, STAMPS } from "./catalog.mjs";
-import { STAMP_PAD, STAMP_SVG, standaloneStamp, stampVars } from "./stamps-svg.mjs";
+import { AREA_FX, ELEMENTS, STAMPS, stampBox, stampNameSize } from "./catalog.mjs";
+import { STAMP_PAD, STAMP_SVG, standaloneStamp, stampSrc, stampVars } from "./stamps-svg.mjs";
 import { labelFont, layoutLabel, textureURL, themeOf } from "./view.mjs";
 
 function loadImage(src) {
@@ -94,8 +94,9 @@ export async function exportPNG(view, map, { asPlayer = true, scale = 1 } = {}) 
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(o.x, o.y, o.size * 0.75, 0, Math.PI * 2); ctx.fill();
     }
-    const svg = standaloneStamp(o.key, stampVars(o.color ?? meta.c1, o.color2 ?? meta.c2));
-    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    const raster = !!meta.img;
+    const url = raster ? stampSrc(o.key)
+      : URL.createObjectURL(new Blob([standaloneStamp(o.key, stampVars(o.color ?? meta.c1, o.color2 ?? meta.c2))], { type: "image/svg+xml" }));
     try {
       const img = await loadImage(url);
       ctx.save();
@@ -103,24 +104,32 @@ export async function exportPNG(view, map, { asPlayer = true, scale = 1 } = {}) 
       ctx.translate(o.x, o.y);
       ctx.rotate((o.rot * Math.PI) / 180);
       ctx.scale(o.flip ? -1 : 1, 1);
-      const k = 1 + (STAMP_PAD * 2) / 100;
-      ctx.drawImage(img, (-o.size * k) / 2, (-o.size * k) / 2, o.size * k, o.size * k);
+      if ( raster ) {
+        const box = stampBox(o);
+        ctx.drawImage(img, -box.w / 2, -box.h / 2, box.w, box.h);
+      }
+      else {
+        const k = 1 + (STAMP_PAD * 2) / 100;
+        ctx.drawImage(img, (-o.size * k) / 2, (-o.size * k) / 2, o.size * k, o.size * k);
+      }
       ctx.restore();
     } catch ( err ) {
       console.warn(err);
     } finally {
-      URL.revokeObjectURL(url);
+      if ( !raster ) URL.revokeObjectURL(url);
     }
     if ( o.showName && o.name ) {
       ctx.save();
-      ctx.font = `700 ${Math.max(12, o.size * 0.22)}px Signika, sans-serif`;
+      const inside = !!meta.nameInside;
+      ctx.font = `700 ${stampNameSize(o)}px Signika, sans-serif`;
       ctx.textAlign = "center";
-      ctx.textBaseline = "top";
+      ctx.textBaseline = inside ? "middle" : "top";
       ctx.lineWidth = 4;
       ctx.strokeStyle = t.paper;
       ctx.fillStyle = t.ink;
-      ctx.strokeText(o.name, o.x, o.y + o.size * 0.5);
-      ctx.fillText(o.name, o.x, o.y + o.size * 0.5);
+      const nameY = inside ? o.y : o.y + stampBox(o).h * 0.48;
+      ctx.strokeText(o.name, o.x, nameY);
+      ctx.fillText(o.name, o.x, nameY);
       ctx.restore();
     }
   }

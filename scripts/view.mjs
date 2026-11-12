@@ -9,12 +9,12 @@
  *   >  vector SVG (regions, routes)  >  deco (waves, clouds)  >  fx  >  objects (stamps, names)  >  ui SVG (selection, ruler, pings)
  */
 import { CELL, MAP_H, MAP_W, escapeHTML, hashSeed, rng, shade } from "./constants.mjs";
-import { AREA_FX, ELEMENTS, ROUTE_STYLES, STAMPS, THEMES, THREATS } from "./catalog.mjs";
+import { AREA_FX, ELEMENTS, ROUTE_STYLES, STAMPS, THEMES, THREATS, stampBox, stampNameSize } from "./catalog.mjs";
 import { buildLandmasses, centroid, decodeLoop, landAt, landPath, pairs, polygonArea, smoothPath } from "./geometry.mjs";
 import { generateLoops } from "./generator.mjs";
 import { SHEET_MAPS } from "./data/sheet-maps.mjs";
 import { PaintLayer } from "./paint.mjs";
-import { ensureSprite, stampURL } from "./stamps-svg.mjs";
+import { ensureSprite, stampSrc } from "./stamps-svg.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const MIN_SCALE = 0.08, MAX_SCALE = 6;
@@ -583,13 +583,16 @@ export class MapView {
   fillStamp(div, o) {
     const meta = STAMPS[o.key];
     const s = o.size;
+    const box = stampBox(o);
     div.classList.add(`sfx-${o.fx}`);
-    div.style.cssText = `left:${f1(o.x - s / 2)}px;top:${f1(o.y - s / 2)}px;width:${s}px;height:${s}px;`
+    if ( meta.img ) div.classList.add("is-raster");
+    if ( meta.nameInside ) div.classList.add("name-inside");
+    div.style.cssText = `left:${f1(o.x - box.w / 2)}px;top:${f1(o.y - box.h / 2)}px;width:${f1(box.w)}px;height:${f1(box.h)}px;`
       + `--c1:${o.color ?? meta.c1};--c2:${o.color2 ?? meta.c2};--rot:${o.rot}deg;--flip:${o.flip ? -1 : 1};opacity:${o.opacity};`
-      + `--d:${f1((hashSeed(o.id) % 1000) / -300)}s;--fs:${f1(Math.max(20, s * 0.24))}px`;
+      + `--d:${f1((hashSeed(o.id) % 1000) / -300)}s;--fs:${f1(stampNameSize(o))}px`;
     let html = "";
     if ( o.aura && ELEMENTS[o.aura] ) html += this.manaHTML(o.aura, o.id, s * 0.75, false);
-    html += `<div class="mmfu-sw"><img class="mmfu-sv" src="${stampURL(o.key, o.color ?? meta.c1, o.color2 ?? meta.c2)}" alt="" draggable="false"></div>`;
+    html += `<div class="mmfu-sw"><img class="mmfu-sv${meta.img ? " is-raster" : ""}" src="${attr(stampSrc(o.key, o.color ?? meta.c1, o.color2 ?? meta.c2))}" alt="" draggable="false"></div>`;
     if ( o.showName && o.name ) html += `<div class="mmfu-sname">${escapeHTML(o.name)}</div>`;
     div.innerHTML = html;
   }
@@ -788,7 +791,10 @@ export class MapView {
 
   /** Axis-aligned box of an object in map units (for selection frames). */
   bounds(o) {
-    if ( o.type === "stamp" ) return { x: o.x - o.size / 2, y: o.y - o.size / 2, w: o.size, h: o.size };
+    if ( o.type === "stamp" ) {
+      const box = stampBox(o);
+      return { x: o.x - box.w / 2, y: o.y - box.h / 2, w: box.w, h: box.h };
+    }
     if ( o.type === "fx" ) return { x: o.x - o.r, y: o.y - o.r, w: o.r * 2, h: o.r * 2 };
     if ( o.type === "label" ) {
       const el = this.objectKeys.get(o.id)?.el;

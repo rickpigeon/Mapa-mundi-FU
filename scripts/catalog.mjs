@@ -2,6 +2,10 @@
  * Mapa-mundi-FU: everything the GM can pick (themes, colours, textures, stamps, effects, routes...).
  * Pure data. Stamp drawings live in stamps-svg.mjs under the same keys.
  */
+import { WONDERDRAFT, WONDERDRAFT_DIR, WONDERDRAFT_GROUPS } from "./data/wonderdraft.mjs";
+
+export { WONDERDRAFT_GROUPS };
+
 
 /* ------------------------------------------------------------------------------------------------
    Map themes. rings = coast ripples drawn in the sea; inner = shading just inside the coast;
@@ -109,7 +113,8 @@ export const STAMP_CATEGORIES = {
   misterios: "Mistérios",
   monstros: "Monstros",
   veiculos: "Veículos",
-  marcadores: "Marcadores"
+  marcadores: "Marcadores",
+  wonderdraft: "Wonderdraft"
 };
 
 export const STAMPS = {
@@ -204,6 +209,33 @@ export const STAMPS = {
   missao: { label: "Missão", cat: "marcadores", c1: "#f2e3c2", c2: "#c43c3c", size: 50 },
   rosa: { label: "Rosa dos ventos", cat: "marcadores", c1: "#2c3a35", c2: "#c9a24a", size: 140 }
 };
+
+/*
+ * "Wonderdraft" stamps: ready-made PNG images (2-Minute Tabletop, CC BY-NC 4.0). `img` marks a raster stamp:
+ * its colours cannot be changed and its box follows the picture's proportions (w x h).
+ */
+for ( const [key, e] of Object.entries(WONDERDRAFT) ) {
+  STAMPS[key] = {
+    label: e.label, cat: "wonderdraft", sub: e.group, img: `${WONDERDRAFT_DIR}/${e.file}`,
+    size: e.size, flip: e.flip, w: e.w, h: e.h, c1: "#8c7b6b", c2: "#f4f7fb",
+    nameInside: key.startsWith("wd-banner-")
+  };
+}
+
+/** Font size (map units) of the name shown with a stamp: follows the box's short side; inside banners, its height. */
+export function stampNameSize(o) {
+  const box = stampBox(o);
+  if ( STAMPS[o.key]?.nameInside ) return Math.max(14, box.h * 0.34);
+  return Math.max(20, Math.min(o.size * 0.24, Math.min(box.w, box.h) * 0.35));
+}
+
+/** Width and height of a stamp's box in map units (square for drawings, the picture's shape for images). */
+export function stampBox(o) {
+  const meta = STAMPS[o.key];
+  if ( !meta?.img || !meta.w || !meta.h ) return { w: o.size, h: o.size };
+  const k = o.size / Math.max(meta.w, meta.h);
+  return { w: meta.w * k, h: meta.h * k };
+}
 
 /* Animations a stamp can have. */
 export const STAMP_FX = {

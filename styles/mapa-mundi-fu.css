@@ -172,6 +172,11 @@ body.theme-light .mmfu-sheet-app,
   --c1d: color-mix(in srgb, var(--c1) 72%, #000); --c1l: color-mix(in srgb, var(--c1) 60%, #fff); --c2d: color-mix(in srgb, var(--c2) 72%, #000);
 }
 .mmfu-pane .mf-stamp svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.mmfu-pane .mf-stamp img { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; }
+.mmfu-pane .mf-stamp.is-raster { padding: 4px; background: #f3ead2; }
+.mmfu-pane .mf-stampgrid.is-raster { grid-template-columns: repeat(3, 1fr); }
+.mmfu-pane .mf-subs .mf-cat { font-size: 11px; height: 22px; padding: 0 7px; }
+.mmfu-pane .mf-credit { font-size: 11px; margin-top: 2px; }
 .mmfu-pane .mf-stamp.is-on { outline: 2px solid var(--mm-accent); outline-offset: 1px; }
 .mmfu-pane .mf-texgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 6px 0; }
 .mmfu-pane .mf-tex {
@@ -256,6 +261,7 @@ body.theme-light .mmfu-sheet-app,
 /* ---------- stamps ---------- */
 .mmfu-stamp {
   position: absolute;
+  isolation: isolate;
   --ink: #2f2620;
   --c3: #4f9fd6;
   --c1d: color-mix(in srgb, var(--c1) 72%, #000);
@@ -263,6 +269,8 @@ body.theme-light .mmfu-sheet-app,
   --c2d: color-mix(in srgb, var(--c2) 72%, #000);
 }
 .mmfu-stamp .mmfu-sw { position: absolute; inset: 0; animation-delay: var(--d); }
+.mmfu-stamp.name-inside .mmfu-sname { top: 50%; transform: translate(-50%, -55%); }
+.mmfu-stamp .mmfu-sv.is-raster { left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; }
 .mmfu-stamp .mmfu-sv {
   position: absolute; left: -15%; top: -15%; width: 130%; height: 130%; max-width: none; border: 0; display: block;
   transform: rotate(var(--rot)) scaleX(var(--flip)); -webkit-user-drag: none; user-select: none;
