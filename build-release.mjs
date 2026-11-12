@@ -1,0 +1,123 @@
+/**
+ * Builds the release files of the module (local only; uploads nothing):
+ *   ../mapa-mundi-fu-release-v<version>/module.zip   (module files at the root of the zip)
+ *   ../mapa-mundi-fu-release-v<version>/module.json
+ *
+ * node build-release.mjs                       -> manifest without any URL
+ * node build-release.mjs --repo dono/repo      -> adds url, manifest, download (this version), bugs, readme, changelog
+ *
+ * The zip is written here (entry paths always use "/"), because the zip tools of Windows PowerShell
+ * write "\" in the paths and Foundry does not install those.
+ */
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "node:zlib";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const INCLUDE = ["module.json", "README.md", "CHANGELOG.md", "LICENSE", "scripts", "styles"];
+
+const args = process.argv.slice(2);
+const repoIndex = args.indexOf("--repo");
+const repo = repoIndex >= 0 ? String(args[repoIndex + 1] ?? "").trim() : "";
+if ( repoIndex >= 0 && !/^[\w.-]+\/[\w.-]+$/.test(repo) ) {
+  console.error("Use --repo dono/nome-do-repositorio");
+  process.exit(1);
+}
+
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "module.json"), "utf8"));
+if ( repo ) {
+  const base = `https://github.com/${repo}`;
+  Object.assign(manifest, {
+    url: base,
+    manifest: `${base}/releases/latest/download/module.json`,
+    download: `${base}/releases/download/v${manifest.version}/module.zip`,
+    bugs: `${base}/issues`,
+    readme: `${base}/blob/main/README.md`,
+    changelog: `${base}/blob/main/CHANGELOG.md`
+  });
+}
+const manifestText = `${JSON.stringify(manifest, null, 2)}\n`;
+
+/* ---------- files ---------- */
+function walk(rel) {
+  const abs = path.join(ROOT, rel);
+  const stat = fs.statSync(abs);
+  if ( stat.isFile() ) return [rel];
+  return fs.readdirSync(abs).sort().flatMap(name => walk(path.join(rel, name)));
+}
+const files = INCLUDE.flatMap(walk).map(rel => ({
+  name: rel.split(path.sep).join("/"),
+  data: rel === "module.json" ? Buffer.from(manifestText, "utf8") : fs.readFileSync(path.join(ROOT, rel))
+}));
+
+/* ---------- zip ---------- */
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for ( let k = 0; k < 8; k++ ) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(buf) {
+  let c = 0xFFFFFFFF;
+  for ( const byte of buf ) c = CRC_TABLE[(c ^ byte) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function dosTime(d = new Date()) {
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
+  const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  return { time, date };
+}
+
+const { time, date } = dosTime();
+const locals = [];
+const centrals = [];
+let offset = 0;
+for ( const f of files ) {
+  const name = Buffer.from(f.name, "utf8");
+  const deflated = zlib.deflateRawSync(f.data, { level: 9 });
+  const useDeflate = deflated.length < f.data.length;
+  const body = useDeflate ? deflated : f.data;
+  const crc = crc32(f.data);
+  const local = Buffer.alloc(30);
+  local.writeUInt32LE(0x04034b50, 0);
+  local.writeUInt16LE(20, 4);
+  local.writeUInt16LE(0x0800, 6); /* UTF-8 names */
+  local.writeUInt16LE(useDeflate ? 8 : 0, 8);
+  local.writeUInt16LE(time, 10);
+  local.writeUInt16LE(date, 12);
+  local.writeUInt32LE(crc, 14);
+  local.writeUInt32LE(body.length, 18);
+  local.writeUInt32LE(f.data.length, 22);
+  local.writeUInt16LE(name.length, 26);
+  local.writeUInt16LE(0, 28);
+  locals.push(local, name, body);
+  const central = Buffer.alloc(46);
+  central.writeUInt32LE(0x02014b50, 0);
+  central.writeUInt16LE(20, 4);
+  central.writeUInt16LE(20, 6);
+  central.writeUInt16LE(0x0800, 8);
+  central.writeUInt16LE(useDeflate ? 8 : 0, 10);
+  central.writeUInt16LE(time, 12);
+  central.writeUInt16LE(date, 14);
+  central.writeUInt32LE(crc, 16);
+  central.writeUInt32LE(body.length, 20);
+  central.writeUInt32LE(f.data.length, 24);
+  central.writeUInt16LE(name.length, 28);
+  central.writeUInt32LE(offset, 42);
+  centrals.push(central, name);
+  offset += local.length + name.length + body.length;
+}
+const centralSize = centrals.reduce((s, b) => s + b.length, 0);
+const end = Buffer.alloc(22);
+end.writeUInt32LE(0x06054b50, 0);
+end.writeUInt16LE(files.length, 8);
+end.writeUInt16LE(files.length, 10);
+end.writeUInt32LE(centralSize, 12);
+end.writeUInt32LE(offset, 16);
+
+const outDir = path.join(ROOT, "..", `${manifest.id}-release-v${manifest.version}`);
+fs.mkdirSync(outDir, { recursive: true });
+fs.writeFileSync(path.join(outDir, "module.zip"), Buffer.concat([...locals, ...centrals, end]));
+fs.writeFileSync(path.join(outDir, "module.json"), manifestText);
+console.log(`${files.length} arquivos -> ${outDir}`);
+console.log(repo ? `URLs apontando para github.com/${repo}` : "Manifesto sem URLs (use --repo dono/repo quando decidir onde publicar).");

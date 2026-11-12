@@ -1,0 +1,30 @@
+{
+  "id": "mapa-mundi-fu",
+  "title": "Mapa-mundi-FU",
+  "description": "<p>O mapa-múndi da campanha de Fabula Ultima, feito a partir da ficha de mapa (World Sheets): o mestre colore terras e mar, pinta com pincéis e texturas, põe carimbos (montanhas, florestas, cidades, monstros, veículos, marcadores), nomes com efeitos animados, mana latente e outros efeitos, rotas, rios, fronteiras e regiões com nível de ameaça. Todos os jogadores veem o mapa ao vivo, medem dias de viagem e fazem sinais; só o mestre edita. Inclui a ficha do mundo (página 1).</p>",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "rickpigeon",
+      "url": "https://github.com/rickpigeon"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/main.mjs"
+  ],
+  "styles": [
+    "styles/mapa-mundi-fu.css"
+  ],
+  "socket": true,
+  "url": "https://github.com/rickpigeon/Mapa-mundi-FU",
+  "manifest": "https://github.com/rickpigeon/Mapa-mundi-FU/releases/latest/download/module.json",
+  "download": "https://github.com/rickpigeon/Mapa-mundi-FU/releases/download/v1.0.0/module.zip",
+  "bugs": "https://github.com/rickpigeon/Mapa-mundi-FU/issues",
+  "readme": "https://github.com/rickpigeon/Mapa-mundi-FU/blob/main/README.md",
+  "changelog": "https://github.com/rickpigeon/Mapa-mundi-FU/blob/main/CHANGELOG.md",
+  "license": "LICENSE"
+}
